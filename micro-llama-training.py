@@ -1,11 +1,10 @@
-import torch                        # PyTorch for implementing LLM (No GPU)
-import time                         # Time module for tracking execution time
-import pandas as pd                 # Pandas for data manipulation and analysis
-import urllib.request               # urllib for handling URL requests (Downloading Dataset)
+import torch
+import time
+import pandas as pd
+import urllib.request
 from tqdm import tqdm
 
-# The URL of the raw text file on GitHub
-url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"   # The URL of the raw text file on GitHub
 file_name = "tinyshakespeare.txt"                                                   # The file name for local storage
 urllib.request.urlretrieve(url, file_name)                                          # Execute the download
 lines = open("tinyshakespeare.txt", 'r').read()                                     # Read the content of the dataset
@@ -15,14 +14,14 @@ print('Total number of characters in our dataset (Vocabulary Size):', len(vocab)
 
 # Model configurations for the number of layers
 MASTER_CONFIG = {
-    'vocab_size': len(vocab),
+    'vocab_size'    : len(vocab),
     'context_window': 16,       # Number of characters in each input (x) and target (y) sequence of each batch
-    'd_model': 128,
-    'n_heads': 8,
-    "log_interval": 10,
-    'n_layers': 4,              # Set the number of layers to 4
-    'epochs': 10000,
-    'batch_size': 32,           # Increase batch size to 32
+    'd_model'       : 128,
+    'n_heads'       : 8,
+    "log_interval"  : 10,
+    'n_layers'      : 4,        # Set the number of layers to 4
+    'epochs'        : 10000,
+    'batch_size'    : 32,       # Increase batch size to 32
 }
 
 itos = {i: ch for i, ch in enumerate(vocab)}    # Mapping integers to characters (itos)
@@ -64,11 +63,9 @@ def get_batches(data, split, batch_size, context_window, config=MASTER_CONFIG):
 def evaluate_loss(model, config=MASTER_CONFIG):
     out = {}                                    # Placeholder for the evaluation results
     model.eval()                                # Set the model to evaluation mode
-    # Iterate through training and validation splits
-    for split in ["train", "val"]:
+    for split in ["train", "val"]:              # Iterate through training and validation splits
         losses = []                             # Placeholder for individual losses
-        # Generate 10 batches for evaluation
-        for _ in range(10):
+        for _ in range(10):                     # Generate 10 batches for evaluation
             xb, yb = get_batches(dataset, split, config['batch_size'], config['context_window'])                # Get input sequences (xb) and target sequences (yb)
             _, loss = model(xb, yb)             # Perform model inference and calculate the loss
             losses.append(loss.item())          # Append the loss to the list
@@ -78,65 +75,59 @@ def evaluate_loss(model, config=MASTER_CONFIG):
 
 # Function to perform training
 def train(model, optimizer, scheduler=None, config=MASTER_CONFIG, print_logs=False):
-    losses = []                                                             # Placeholder for storing losses
-    start_time = time.time()                                                # Start tracking time
-    # Iterate through epochs
-    for epoch in tqdm(range(config['epochs'])):
-        optimizer.zero_grad()                                               # Zero out gradients
+    losses = []                                         # Placeholder for storing losses
+    start_time = time.time()                            # Start tracking time
+    for epoch in tqdm(range(config['epochs'])):         # Iterate through epochs
+        optimizer.zero_grad()                           # Zero out gradients
         xs, ys = get_batches(dataset, 'train', config['batch_size'], config['context_window'])  # Obtain batches for training
-        logits, loss = model(xs, targets=ys)                                # Forward pass through the model to calculate logits and loss
-        loss.backward()                                                     # Backward pass and optimization step
+        logits, loss = model(xs, targets=ys)            # Forward pass through the model to calculate logits and loss
+        loss.backward()                                 # Backward pass and optimization step
         optimizer.step()
 
-        # If a learning rate scheduler is provided, adjust the learning rate
-        if scheduler:
+        if scheduler:                                   # If a learning rate scheduler is provided, adjust the learning rate
             scheduler.step()
 
-        # Log progress every specified interval
-        if epoch % config['log_interval'] == 0:
-
-            batch_time = time.time() - start_time                           # Calculate batch time
-            x = evaluate_loss(model)                                        # Evaluate loss on validation set
-            losses += [x]                                                   # Store the validation loss
+        if epoch % config['log_interval'] == 0:         # Log progress every specified interval
+            batch_time = time.time() - start_time       # Calculate batch time
+            x = evaluate_loss(model)                    # Evaluate loss on validation set
+            losses += [x]                               # Store the validation loss
             
-            # Print progress logs if specified
-            if print_logs:
+            if print_logs:                              # Print progress logs if specified
                 print(f"Epoch {epoch} | val loss {x['val']:.3f} | Time {batch_time:.3f} | ETA in seconds {batch_time * (config['epochs'] - epoch)/config['log_interval'] :.3f}")
                 
-            start_time = time.time()                                        # Reset the timer
+            start_time = time.time()                    # Reset the timer
 
-            # Print learning rate if a scheduler is provided
-            if scheduler:
+            if scheduler:                               # Print learning rate if a scheduler is provided
                 print("lr: ", scheduler.get_lr())
 
-    print("Validation loss: ", losses[-1]['val'])    # Print the final validation loss
-    return pd.DataFrame(losses).plot()               # Plot the training and validation loss curves
+    print("Validation loss: ", losses[-1]['val'])       # Print the final validation loss
+    return pd.DataFrame(losses).plot()                  # Plot the training and validation loss curves
 
 from model_llama import *
 #"""
-llama = Llama(MASTER_CONFIG)                                                                # Create an instance of RopeModel (RMSNorm, RoPE, Multi-Head, SwiGLU, N_layers)
+llama = Llama(MASTER_CONFIG)                                    # Create an instance of RopeModel (RMSNorm, RoPE, Multi-Head, SwiGLU, N_layers)
 
-optimizer = torch.optim.Adam(llama.parameters())                                            # Define the Adam optimizer for model parameters
-train(llama, optimizer)                                                                     # Train the model
-train(llama, optimizer, scheduler=None, config=MASTER_CONFIG)                               # Train the LLaMA model for the specified number of epochs
+optimizer = torch.optim.Adam(llama.parameters())                # Define the Adam optimizer for model parameters
+train(llama, optimizer)                                         # Train the model
+#train(llama, optimizer, scheduler=None, config=MASTER_CONFIG)   # Train the LLaMA model for the specified number of epochs
 
 xs, ys = get_batches(dataset, 'test', MASTER_CONFIG['batch_size'], MASTER_CONFIG['context_window']) # Get batches from the test set
-logits, loss = llama(xs, ys)                                                                # Pass the test data through the LLaMA model
-print(loss)                                                                                 # Print the loss on the test set
-torch.save(llama, 'llama_model.pth')                                                        # Save the entire model
-torch.save(llama.state_dict(), 'llama_model_params.pth')                                    # If you want to save only the model parameters
+logits, loss = llama(xs, ys)                                    # Pass the test data through the LLaMA model
+print(loss)                                                     # Print the loss on the test set
+torch.save(llama, 'llama_model.pth')                            # Save the entire model
+torch.save(llama.state_dict(), 'llama_model_params.pth')        # If you want to save only the model parameters
 
 """
-MASTER_CONFIG.update({"epochs": 10000})                                                     # Update configuration
-llama_with_cosine = Llama(MASTER_CONFIG)                                                    # Create Llama model with Cosine Annealing learning schedule
+MASTER_CONFIG.update({"epochs": 10000})                         # Update configuration
+llama_with_cosine = Llama(MASTER_CONFIG)                        # Create Llama model with Cosine Annealing learning schedule
 llama_optimizer = torch.optim.Adam(llama_with_cosine.parameters(), betas=(.9, .95), weight_decay=.1, eps=1e-9, lr=1e-3) # Define Adam optimizer with specific hyperparameters
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(llama_optimizer, 300, eta_min=1e-5)  # Define Cosine Annealing learning rate scheduler
-train(llama_with_cosine, llama_optimizer, scheduler=scheduler)                              # Train the Llama model with the specified optimizer and scheduler
+train(llama_with_cosine, llama_optimizer, scheduler=scheduler)  # Train the Llama model with the specified optimizer and scheduler
 
 xs, ys = get_batches(dataset, 'test', MASTER_CONFIG['batch_size'], MASTER_CONFIG['context_window']) # Get batches from the test set
-logits, loss = llama_with_cosine(xs, ys)                                                                # Pass the test data through the LLaMA model
-print(loss)                                                                                 # Print the loss on the test set
+logits, loss = llama_with_cosine(xs, ys)                        # Pass the test data through the LLaMA model
+print(loss)                                                     # Print the loss on the test set
 
-torch.save(llama_with_cosine, 'llama_model_cosine.pth')                                                        # Save the entire model
-torch.save(llama_with_cosine.state_dict(), 'llama_model_params_cosine.pth')                                    # If you want to save only the model parameters
+torch.save(llama_with_cosine, 'llama_model_cosine.pth')         # Save the entire model
+torch.save(llama_with_cosine.state_dict(), 'llama_model_params_cosine.pth')                 # If you want to save only the model parameters
 """

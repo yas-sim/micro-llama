@@ -7,14 +7,14 @@ vocab = sorted(list(set(lines)))                    # Create a sorted list of un
 
 # Model configurations for the number of layers
 MASTER_CONFIG = {
-    'vocab_size': len(vocab),
+    'vocab_size'    : len(vocab),
     'context_window': 16,       # Number of characters in each input (x) and target (y) sequence of each batch
-    'd_model': 128,
-    'n_heads': 8,
-    "log_interval": 10,
-    'n_layers': 4,              # Set the number of layers to 4
-    'epochs': 10000,
-    'batch_size': 32,           # Increase batch size to 32
+    'd_model'       : 128,
+    'n_heads'       : 8,
+    "log_interval"  : 10,
+    'n_layers'      : 4,        # Set the number of layers to 4
+    'epochs'        : 10000,
+    'batch_size'    : 32,       # Increase batch size to 32
 }
 
 itos = {i: ch for i, ch in enumerate(vocab)}    # Mapping integers to characters (itos)
@@ -29,9 +29,9 @@ import sys
 # Generate function for text generation using the trained model
 def generate(model, config=MASTER_CONFIG, prompt_text=None, max_new_tokens=30, stream=False):
     if prompt_text is None:
-        idx = torch.zeros(5, 1).long()
+        idx = torch.zeros(5, 1).long()                                  # Start text generation with empty input [[0],[0],[0],[0],[0]]
     else:
-        input_data = [ [0] + encode(prompt_text) for _ in range(5) ]
+        input_data = [ [0] + encode(prompt_text) for _ in range(5) ]    # Convert the prompt text into embeddings
         idx = torch.from_numpy(np.array(input_data)).long()
         print(prompt_text, end='', flush=True)
     for itr in range(max_new_tokens):
@@ -53,8 +53,8 @@ llama = torch.load('llama_model.pth')
 # Generate text using the trained LLM (llama) with a maximum of 500 tokens
 stream = True
 print('-'*80)
-#generated_texts = generate(llama, MASTER_CONFIG, max_new_tokens=300, stream=stream)
-generated_texts = generate(llama, MASTER_CONFIG, "ELIZA", max_new_tokens=300, stream=stream)
+generated_texts = generate(llama, MASTER_CONFIG, max_new_tokens=300, stream=stream)
+#generated_texts = generate(llama, MASTER_CONFIG, prompt_text="ELIZA", max_new_tokens=300, stream=stream)  # Let the LLM model write the sentence after "ELIZA".
 
 if not stream:
     for generated_text in generated_texts:
