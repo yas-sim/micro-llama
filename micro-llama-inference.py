@@ -25,7 +25,7 @@ def encode(s):                                  # Encode function: Converts a st
 
 def decode(l):                                  # Decode function: Converts a list of integers back to a string using the mapping itos
     return ''.join([itos[i] for i in l])
-import sys
+
 # Generate function for text generation using the trained model
 def generate(model, config=MASTER_CONFIG, prompt_text=None, max_new_tokens=30, stream=False):
     if prompt_text is None:
