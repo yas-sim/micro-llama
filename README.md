@@ -1,6 +1,6 @@
 # Micro llama
 
-Working Jupyter notebook from following tech blog article.
+Working Jupyter notebook and stand alone Python codes from following tech blog article.
 
 ----
 
